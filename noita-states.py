@@ -73,7 +73,7 @@ def main():
         edit_config(configs, savespath, output)
         print()
 
-    print('''Backup: 0
+    print('''Backup: 0 (or empty)
 Load: 1''')
 
     nam = {}
