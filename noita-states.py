@@ -76,11 +76,11 @@ def main():
     print('''Backup: 0
 Load: 1''')
 
-    nam = ''
-    firnam = True
-    bc = ''
-    bcv = ''
-    firbc = True
+    nam = {}
+    firnam = []
+    bc = {}
+    bcv = {}
+    firbc = []
     while True:
         sect = input('> ')
         
@@ -92,16 +92,16 @@ Load: 1''')
 
                 while True:
                     savenam = 'save'+savenum
-                    if firnam:
-                        nam = input('Backup name (optional): ')
-                    savenam += ('_'+nam if nam else '')
+                    if not savenum in firnam:
+                        nam[savenum] = input('Backup name (optional): ')
+                    savenam += ('_'+nam[savenum] if nam[savenum] else '')
                     backups = [int(b[len(savenam)+1:]) for b in os.listdir(output) if savenam in b and b[len(savenam)+1:].isdigit()]
                     bck = savenam in os.listdir(output)
                     savenam += ('_'+str(max(backups)+1) if backups else ('_1' if bck else ''))
                     if input('"'+savenam+'"? (Y/n): ').startswith('n'):
-                        firnam = True
+                        firnam.pop(savenum, None)
                         continue
-                    firnam = False
+                    if not savenum in firnam: firnam.append(savenum)
                     break
                     
                 outputtar = pjoin(output, savenam)
@@ -120,24 +120,24 @@ Load: 1''')
                 
                 while True:
                     backnam = 'save'+backnum
-                    if firbc:
+                    if not backnum in firbc:
                         while True:
-                            bc = input('Backup name (optional): ')
-                            mtchs = [b for b in os.listdir(output) if ('_'+bc if bc else 'save'+backnum) in b]
+                            bc[backnum] = input('Backup name (optional): ')
+                            mtchs = [b for b in os.listdir(output) if ('_'+bc[backnum] if bc[backnum] else 'save'+backnum) in b]
                             if not mtchs:
-                                print('No match for "'+(bc if bc else 'save'+backnum)+'"')
+                                print('No match for "'+(bc[backnum] if bc[backnum] else 'save'+backnum)+'"')
                                 continue
-                            bc = mtchs[0].replace('save'+backnum+('_' if mtchs[0].startswith('save'+backnum+'_') else ''), '')
+                            bc[backnum] = mtchs[0].replace('save'+backnum+('_' if mtchs[0].startswith('save'+backnum+'_') else ''), '')
                             break
-                        bcv = input('Version number (empty for last): ')
-                    backnam += ('_'+bc+('_'+bcv if bcv and bcv!='0' else '') if bc else '')
-                    if not bcv:
+                        bcv[backnum] = input('Version number (empty for last): ')
+                    backnam += ('_'+bc[backnum]+('_'+bcv[backnum] if bcv[backnum] and bcv[backnum]!='0' else '') if bc[backnum] else '')
+                    if not bcv[backnum]:
                         backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if backnam in b and b[len(backnam)+1:].isdigit()]
                         backnam += ('_'+str(max(backups)) if backups else '')
                     if input('"'+backnam+'"? (Y/n): ').startswith('n'):
-                        firnam = True
+                        firbc.pop(backnum, None)
                         continue
-                    firnam = False
+                    if not backnum in firbc: firbc.append(backnum)
                     break
 
                 backtar = pjoin(output, backnam)
@@ -155,4 +155,4 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        input(e)
+        raise
