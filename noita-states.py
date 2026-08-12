@@ -282,13 +282,15 @@ Clear: 6''')
                             bcs = [b.replace('save'+backnum+('_' if b.startswith('save'+backnum+'_') else ''), '') for b in os.listdir(output) if b.startswith('save'+backnum)]
                             bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
                             cmds = list(dict.fromkeys([b for b in bcs if b]))
-                            bc[backnum] = input('Backup name (optional): ')
+                            bc[backnum] = input(f'Backup name (empty for first "save{backnum}" match): ')
                             bpre = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
                             mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
                             if not mtchs and not bc.get(backnum) and cmds:
                                 bc[backnum] = cmds[0]
                                 bpre = 'save'+backnum+'_'+bc[backnum]
                                 mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
+                                out.write(f'\033[A\033[{44+len(backnum)}C{cmds[0]}\r\033[B')
+                                out.flush()
                             if not mtchs:
                                 print('No match for "'+(bc.get(backnum) or 'save'+backnum)+'"')
                                 continue
@@ -306,7 +308,10 @@ Clear: 6''')
                         backnam += ('' if bcv[backnum] == '0' else '_'+bcv[backnum])
                     else:
                         backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if b.startswith(backnam+'_') and b[len(backnam)+1:].isdigit()]
-                        backnam += ('_'+str(max(backups)) if backups else '')
+                        ver = ('_'+str(max(backups)) if backups else '')
+                        backnam += ver
+                        out.write(f'\033[A\033[33C{ver.replace("_","")}\r\033[B')
+                        out.flush()
                     cmds = ['y', 'n']
                     if sect == '4':
                         print(f'Previous: "{backnam}"')
