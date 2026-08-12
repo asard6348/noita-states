@@ -169,10 +169,10 @@ def main():
         edit_config(configs, savespath, output)
         print()
 
-    print('''Backup: 0 (or empty)
-Load: 1
-Remove: 2
-Quit: 3''')
+    print('''Quit: 0
+Backup: 1 (or empty)
+Load: 2
+Remove: 3''')
 
     nam = {}
     firnam = []
@@ -196,10 +196,13 @@ Quit: 3''')
         if not os.path.exists(output):
             print("Path to output for backups has been removed or renamed.")
             continue
+
+        if sect == '0':
+            exit()
         
-        if sect == '0' or not sect:
+        elif sect == '1' or not sect:
             if not sect:
-                out.write('\033[A\033[2C0\r\033[B')
+                out.write('\033[A\033[2C1\r\033[B')
                 out.flush()
             try:
                 while True:
@@ -244,7 +247,7 @@ Quit: 3''')
                 print('←')
                 continue
 
-        elif sect in ('1', '2'):
+        elif sect in ('2', '3'):
             try:
                 while True:
                     bcks = [(b.split('_')[0] if '_' in b else b).replace('save','') for b in os.listdir(output)]
@@ -252,7 +255,7 @@ Quit: 3''')
                     for b in bcks:
                         if b not in backs: backs.append(b)
                     cmds = backs
-                    backnum = input(('[Load]' if sect=='1' else '[Remove]')+' ('+', '.join(backs)+'): ')
+                    backnum = input(('[Load]' if sect=='2' else '[Remove]')+' ('+', '.join(backs)+'): ')
                     if not backnum: backnum = backs[0]
                     if backnum not in backs:
                         cand = [nu for nu in backs if nu==backnum or nu.endswith(backnum)]
@@ -298,7 +301,7 @@ Quit: 3''')
 
                 backtar = pjoin(output, backnam)
 
-                if sect == '1':
+                if sect == '2':
                     while True:
                         cmds = saves
                         slotnum = input('Load to save slot ('+', '.join(saves)+'): ')
@@ -324,9 +327,6 @@ Quit: 3''')
             except KeyboardInterrupt:
                 print('←')
                 continue
-
-        elif sect == '3':
-            exit()
         
     
 
