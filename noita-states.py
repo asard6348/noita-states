@@ -171,7 +171,8 @@ def main():
 
     print('''Backup: 0 (or empty)
 Load: 1
-Remove: 2''')
+Remove: 2
+Quit: 3''')
 
     nam = {}
     firnam = []
@@ -257,7 +258,6 @@ Remove: 2''')
                             print('No save slot with the given number exists. Retry.')
                             continue
                     break
-                savetar = pjoin(savespath, 'save'+backnum)
                 
                 while True:
                     if not backnum in firbc:
@@ -295,6 +295,19 @@ Remove: 2''')
                 backtar = pjoin(output, backnam)
 
                 if sect == '1':
+                    while True:
+                        cmds = saves
+                        slotnum = input('Load to save slot ('+', '.join(saves)+'): ')
+                        if not slotnum: slotnum = backnum
+                        if slotnum not in saves:
+                            cand = [nu for nu in saves if nu==slotnum or nu.endswith(slotnum)]
+                            if cand:
+                                slotnum = cand[0]
+                            else:
+                                print('No save slot with the given number exists. Retry.')
+                                continue
+                        break
+                    savetar = pjoin(savespath, 'save'+slotnum)
                     if work(lambda: shutil.copytree(backtar, savetar, dirs_exist_ok=True)):
                         print(f'Successfully loaded backup at "{backtar}"')
                     else:
@@ -307,6 +320,9 @@ Remove: 2''')
             except KeyboardInterrupt:
                 print('←')
                 continue
+
+        elif sect == '3':
+            exit()
         
     
 
