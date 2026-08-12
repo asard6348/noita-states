@@ -247,11 +247,15 @@ Quit: 3''')
         elif sect in ('1', '2'):
             try:
                 while True:
-                    cmds = saves
-                    backnum = input(('[Load]' if sect=='1' else '[Remove]')+' ('+', '.join(saves)+'): ')
-                    if not backnum: backnum = saves[0]
-                    if backnum not in saves:
-                        cand = [nu for nu in saves if nu==backnum or nu.endswith(backnum)]
+                    bcks = [(b.split('_')[0] if '_' in b else b).replace('save','') for b in os.listdir(output)]
+                    backs = []
+                    for b in bcks:
+                        if b not in backs: backs.append(b)
+                    cmds = backs
+                    backnum = input(('[Load]' if sect=='1' else '[Remove]')+' ('+', '.join(backs)+'): ')
+                    if not backnum: backnum = backs[0]
+                    if backnum not in backs:
+                        cand = [nu for nu in backs if nu==backnum or nu.endswith(backnum)]
                         if cand:
                             backnum = cand[0]
                         else:
