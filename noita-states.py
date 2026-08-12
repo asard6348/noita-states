@@ -132,7 +132,7 @@ def main():
             savespath = input('Path to Noita saves (e.g. .../LocalLow/Nolla_Games_Noita): ').replace('"', '').replace('\\', '/')
         while True:
             if os.path.exists(savespath):
-                saves = [n[4:] for n in os.listdir(savespath) if n.startswith('save') and n[4:].isdigit()]
+                saves = [n[4:n.rfind('_')] if '_' in n else n[4:] for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
             else:
                 print("Path doesn't exist.")
                 break
@@ -172,7 +172,10 @@ def main():
     print('''Quit: 0
 Backup: 1 (or empty)
 Load: 2
-Remove: 3''')
+Remove: 3
+Rename: 4
+List: 5
+Clear: 6''')
 
     nam = {}
     firnam = []
@@ -185,7 +188,7 @@ Remove: 3''')
         sect = input('> ')
 
         if os.path.exists(savespath):
-            saves = [n[4:] for n in os.listdir(savespath) if n.startswith('save') and n[4:].isdigit()]
+            saves = [n[4:n.rfind('_')] if '_' in n else n[4:] for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
             if not saves:
                 print("Every save folders in Noita saves path have been removed or renamed.")
                 continue
@@ -207,7 +210,7 @@ Remove: 3''')
             try:
                 while True:
                     cmds = saves
-                    savenum = input('[Backup] ('+', '.join(saves)+'): ')
+                    savenum = input('[Backup] ('+', '.join([f'*{s}*' if s == saves[0] else s for s in saves])+'): ')
                     if not savenum: savenum = saves[0]
                     if savenum not in saves:
                         cand = [nu for nu in saves if nu==savenum or nu.endswith(savenum)]
@@ -215,6 +218,7 @@ Remove: 3''')
                             savenum = cand[0]
                         else:
                             print('No save slot with the given number exists.')
+                            continue
                     break
                 savetar = pjoin(savespath, 'save'+savenum)
 
@@ -248,7 +252,11 @@ Remove: 3''')
                 print('←')
                 continue
 
-        elif sect in ('2', '3'):
+        elif sect in ('2', '3', '4'):
+            baacks = [n[4:n.rfind('_')] if '_' in n else n[4:] for n in os.listdir(output) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
+            if not baacks:
+                print("Path to output for backups has no save slots.")
+                continue
             try:
                 while True:
                     bcks = [(b.split('_')[0] if '_' in b else b).replace('save','') for b in os.listdir(output)]
@@ -256,14 +264,14 @@ Remove: 3''')
                     for b in bcks:
                         if b not in backs: backs.append(b)
                     cmds = backs
-                    backnum = input(('[Load]' if sect=='2' else '[Remove]')+' ('+', '.join(backs)+'): ')
+                    backnum = input(('[Load]' if sect=='2' else '[Remove]' if sect=='3' else '[Rename]')+' ('+', '.join([f'*{s}*' if s == backs[0] else s for s in backs])+'): ')
                     if not backnum: backnum = backs[0]
                     if backnum not in backs:
                         cand = [nu for nu in backs if nu==backnum or nu.endswith(backnum)]
                         if cand:
                             backnum = cand[0]
                         else:
-                            print('No save slot with the given number exists. Retry.')
+                            print('No save slot with the given number exists.')
                             continue
                     break
                 
@@ -300,10 +308,13 @@ Remove: 3''')
                         backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if b.startswith(backnam+'_') and b[len(backnam)+1:].isdigit()]
                         backnam += ('_'+str(max(backups)) if backups else '')
                     cmds = ['y', 'n']
-                    if input('"'+backnam+'"? (Y/n): ').startswith('n'):
-                        if backnum in firbc:
-                            firbc.remove(backnum)
-                        continue
+                    if sect == '4':
+                        print(f'Previous: "{backnam}"')
+                    else:
+                        if input('"'+backnam+'"? (Y/n): ').startswith('n'):
+                            if backnum in firbc:
+                                firbc.remove(backnum)
+                            continue
                     if not backnum in firbc and sect == '2': firbc.append(backnum)
                     break
 
@@ -312,14 +323,14 @@ Remove: 3''')
                 if sect == '2':
                     while True:
                         cmds = saves
-                        slotnum = input('Load to save slot ('+', '.join(saves)+'): ')
+                        slotnum = input('Load to save slot ('+', '.join([f'*{s}*' if s == backnum else s for s in saves])+'): ')
                         if not slotnum: slotnum = backnum
                         if slotnum not in saves:
                             cand = [nu for nu in saves if nu==slotnum or nu.endswith(slotnum)]
                             if cand:
                                 slotnum = cand[0]
                             else:
-                                print('No save slot with the given number exists. Retry.')
+                                print('No save slot with the given number exists.')
                                 continue
                         break
                     savetar = pjoin(savespath, 'save'+slotnum)
@@ -327,11 +338,73 @@ Remove: 3''')
                         print(f'Successfully loaded backup at "{backtar}"')
                     else:
                         continue
-                else:
+                    
+                elif sect == '3':
                     if work(lambda: shutil.rmtree(backtar)):
                         print(f'Successfully removed backup at "{backtar}"')
                     else:
                         continue
+                    
+                elif sect == '4':
+                    while True:
+                        cmds = saves
+                        slotres = input('New save slot number ('+', '.join([f'*{s}*' if s == backnum else s for s in saves])+'): ')
+                        if not slotres: slotres = backnum
+                        if slotres not in saves:
+                            cand = [nu for nu in saves if nu==slotres or nu.endswith(slotres)]
+                            if cand:
+                                slotres = cand[0]
+                            else:
+                                print('No save slot with the given number exists.')
+                                continue
+                        baseres = 'save' + slotres
+                        bcs = [b.replace('save'+backnum+('_' if b.lower().startswith(('save'+backnum+'_').lower()) else ''), '') for b in os.listdir(output) if b.lower().startswith(('save'+backnum).lower())]
+                        bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
+                        cmds = list(dict.fromkeys([b for b in bcs if b]))
+                        namres = input('Rename (empty to keep previous): ')
+                        baseres += ('_' + namres if namres else ('_' + bc[backnum] if backnum in bc else ''))
+                        baselow = baseres.lower()
+                        backups = [int(b[len(baseres)+1:]) for b in os.listdir(output) if b.lower().startswith(baselow+'_') and b[len(baseres)+1:].isdigit() and b != backnam]
+                        bck = any(b.lower() == baselow for b in os.listdir(output))
+                        backres = baseres + ('_' + str(max(backups)+1) if backups else ('_1' if bck and baselow != backnam.lower() else ''))
+                        cmds = ['y', 'n']
+                        if input('"'+backres+'"? (Y/n): ').startswith('n'):
+                            continue
+                        break
+                    if work(lambda: os.rename(backtar, pjoin(output, backres))):
+                        print(f'Successfully renamed backup previously at "{backtar}"')
+                    else:
+                        continue
+            except KeyboardInterrupt:
+                print('←')
+                continue
+
+        elif sect == '5':
+            baacks = [n+f' ({", ".join(sorted(os.listdir(pjoin(output, n)), key=lambda k: k.count(".")))})' for n in os.listdir(output) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
+            saaves = [n+f' ({", ".join(sorted(os.listdir(pjoin(savespath, n)), key=lambda k: k.count(".")))})' for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
+            cmds = ['b', 's']
+            print('\n'.join(baacks if not input('Backups or saves? (B/s): ').startswith('s') else saaves))
+
+        elif sect == '6':
+            try:
+                while True:
+                    cmds = saves
+                    savenum = input('[Clear] ('+', '.join([f'*{s}*' if s == saves[0] else s for s in saves])+'): ')
+                    if not savenum: savenum = saves[0]
+                    if savenum not in saves:
+                        cand = [nu for nu in saves if nu==savenum or nu.endswith(savenum)]
+                        if cand:
+                            savenum = cand[0]
+                        else:
+                            print('No save slot with the given number exists.')
+                            continue
+                    break
+                savetar = pjoin(savespath, 'save'+savenum)
+
+                if work(lambda: shutil.rmtree(savetar), lambda: os.makedirs(savetar, exist_ok=True)):
+                    print(f'Successfully cleared save at "{savetar}"')
+                else:
+                    continue
             except KeyboardInterrupt:
                 print('←')
                 continue
