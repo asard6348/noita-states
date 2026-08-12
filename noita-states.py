@@ -158,7 +158,7 @@ def main():
             autopath = False
             cmds = ['y', 'n']
             if input("Path doesn't exist. Create? (y/N): ").startswith('y'):
-                os.path.makedirs(output, exist_ok=True)
+                os.makedirs(output, exist_ok=True)
             else:
                 continue
         break
