@@ -1,4 +1,10 @@
-import os, sys, shutil, json, builtins, glob
+import os, sys, shutil, filecmp, json, builtins, glob
+
+
+def smart_copy(src, dst):
+    if os.path.exists(dst) and filecmp.cmp(src, dst, shallow=False):
+        return
+    shutil.copy2(src, dst)
 
 
 def fetch_config(configs):
@@ -244,7 +250,7 @@ Clear: 6''')
                     
                 outputtar = pjoin(output, savenam)
 
-                if work(lambda: shutil.copytree(savetar, outputtar, dirs_exist_ok=True)):
+                if work(lambda: shutil.copytree(savetar, outputtar, copy_function=smart_copy, dirs_exist_ok=True)):
                     print(f'Successfully made backup at "{outputtar}"')
                 else:
                     continue
@@ -277,7 +283,9 @@ Clear: 6''')
                 
                 while True:
                     backss = [b for b in os.listdir(output) if b.split('_')[0].replace('save','')==backnum]
+                    askd = False
                     if (not backnum in firbc or sect != '2') and len(backss) > 1:
+                        askd = True
                         while True:
                             bcs = [b.replace('save'+backnum+('_' if b.startswith('save'+backnum+'_') else ''), '') for b in os.listdir(output) if b.startswith('save'+backnum)]
                             bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
@@ -310,8 +318,9 @@ Clear: 6''')
                         backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if b.startswith(backnam+'_') and b[len(backnam)+1:].isdigit()]
                         ver = ('_'+str(max(backups)) if backups else '')
                         backnam += ver
-                        out.write(f'\033[A\033[33C{ver.replace("_","")}\r\033[B')
-                        out.flush()
+                        if askd:
+                            out.write(f'\033[A\033[33C{ver.replace("_","")}\r\033[B')
+                            out.flush()
                     cmds = ['y', 'n']
                     if sect == '4':
                         print(f'Previous: "{backnam}"')
@@ -339,7 +348,7 @@ Clear: 6''')
                                 continue
                         break
                     savetar = pjoin(savespath, 'save'+slotnum)
-                    if work(lambda: shutil.copytree(backtar, savetar, dirs_exist_ok=True)):
+                    if work(lambda: shutil.copytree(backtar, savetar, copy_function=smart_copy, dirs_exist_ok=True)):
                         print(f'Successfully loaded backup from "{backtar}" to "save{slotnum}"')
                     else:
                         continue
