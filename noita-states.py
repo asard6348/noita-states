@@ -229,7 +229,7 @@ Clear: 6''')
                         bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
                         cmds = list(dict.fromkeys([b for b in bcs if b]))
                         nam[savenum] = input('Backup name (optional): ')
-                    base_nam += ('_' + nam[savenum] if nam[savenum] else '')
+                    base_nam += ('_' + nam[savenum] if nam.get(savenum) else '')
                     base_low = base_nam.lower()
                     backups = [int(b[len(base_nam)+1:]) for b in os.listdir(output) if b.lower().startswith(base_low+'_') and b[len(base_nam)+1:].isdigit()]
                     bck = any(b.lower() == base_low for b in os.listdir(output))
@@ -283,14 +283,14 @@ Clear: 6''')
                             bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
                             cmds = list(dict.fromkeys([b for b in bcs if b]))
                             bc[backnum] = input('Backup name (optional): ')
-                            bpre = 'save'+backnum+('_'+bc[backnum] if backnum in bc else '')
+                            bpre = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
                             mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
-                            if not mtchs and not backnum in bc and cmds:
+                            if not mtchs and not bc.get(backnum) and cmds:
                                 bc[backnum] = cmds[0]
                                 bpre = 'save'+backnum+'_'+bc[backnum]
                                 mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
                             if not mtchs:
-                                print('No match for "'+(bc[backnum] if backnum in bc else 'save'+backnum)+'"')
+                                print('No match for "'+(bc.get(backnum) or 'save'+backnum)+'"')
                                 continue
                             break
                         cmds = sorted([(b.replace(bpre, '').lstrip('_') or '0') for b in mtchs], key=lambda x: int(x) if x.isdigit() else -1)
@@ -301,8 +301,8 @@ Clear: 6''')
                             bc[backnum] = backn[1]
                         if len(backn) > 2:
                             bcv[backnum] = backn[2]
-                    backnam = 'save'+backnum+('_'+bc[backnum] if backnum in bc else '')
-                    if backnum in bcv:
+                    backnam = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
+                    if bcv.get(backnum):
                         backnam += ('' if bcv[backnum] == '0' else '_'+bcv[backnum])
                     else:
                         backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if b.startswith(backnam+'_') and b[len(backnam)+1:].isdigit()]
@@ -362,7 +362,7 @@ Clear: 6''')
                         bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
                         cmds = list(dict.fromkeys([b for b in bcs if b]))
                         namres = input('Rename (empty to keep previous): ')
-                        baseres += ('_' + namres if namres else ('_' + bc[backnum] if backnum in bc else ''))
+                        baseres += ('_' + namres if namres else ('_' + bc[backnum] if bc.get(backnum) else ''))
                         baselow = baseres.lower()
                         backups = [int(b[len(baseres)+1:]) for b in os.listdir(output) if b.lower().startswith(baselow+'_') and b[len(baseres)+1:].isdigit() and b != backnam]
                         bck = any(b.lower() == baselow for b in os.listdir(output))
@@ -412,8 +412,6 @@ Clear: 6''')
             except KeyboardInterrupt:
                 print('←')
                 continue
-        
-    
 
 
 if __name__ == "__main__":
