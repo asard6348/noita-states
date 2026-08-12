@@ -13,8 +13,6 @@ def smart_copy(src, dst):
         dstat = hashdata(dst)
         if sstat == dstat:
             return
-        print(sstat)
-        print(dstat)
     except OSError:
         pass
     shutil.copy2(src, dst)
