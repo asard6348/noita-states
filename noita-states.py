@@ -132,7 +132,7 @@ def main():
             savespath = input('Path to Noita saves (e.g. .../LocalLow/Nolla_Games_Noita): ').replace('"', '').replace('\\', '/')
         while True:
             if os.path.exists(savespath):
-                saves = [n[4:n.rfind('_')] if '_' in n else n[4:] for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
+                saves = [n[4:n.find('_')] if '_' in n else n[4:] for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
             else:
                 print("Path doesn't exist.")
                 break
@@ -140,7 +140,7 @@ def main():
                 print('No valid save folder (e.g. "save00") could be found in the set Noita saves path.')
                 autopath = False
                 cmds = ['y', 'n']
-                if input('Retry? (Y/n): ').startswith('n'):
+                if input('Retry? (Y/n): ').lower().startswith('n'):
                     cdata.pop('savespath', None)
                     break
                 continue
@@ -157,7 +157,7 @@ def main():
         if not os.path.exists(output):
             autopath = False
             cmds = ['y', 'n']
-            if input("Path doesn't exist. Create? (y/N): ").startswith('y'):
+            if input("Path doesn't exist. Create? (y/N): ").lower().startswith('y'):
                 os.makedirs(output, exist_ok=True)
             else:
                 continue
@@ -165,7 +165,7 @@ def main():
 
     autopath = False
     cmds = ['y', 'n']
-    if newcon and not input('Save to config file? (Y/n): ').startswith('n'):
+    if newcon and not input('Save to config file? (Y/n): ').lower().startswith('n'):
         edit_config(configs, savespath, output)
         print()
 
@@ -184,11 +184,11 @@ Clear: 6''')
     firbc = []
     while True:
         autopath = False
-        cmds = ['0', '1', '2']
+        cmds = [str(r) for r in range(0,7)]
         sect = input('> ')
 
         if os.path.exists(savespath):
-            saves = [n[4:n.rfind('_')] if '_' in n else n[4:] for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
+            saves = [n[4:n.find('_')] if '_' in n else n[4:] for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
             if not saves:
                 print("Every save folders in Noita saves path have been removed or renamed.")
                 continue
@@ -235,7 +235,7 @@ Clear: 6''')
                     bck = any(b.lower() == base_low for b in os.listdir(output))
                     savenam = base_nam + ('_' + str(max(backups)+1) if backups else ('_1' if bck else ''))
                     cmds = ['y', 'n']
-                    if input('"'+savenam+'"? (Y/n): ').startswith('n'):
+                    if input('"'+savenam+'"? (Y/n): ').lower().startswith('n'):
                         if savenum in firnam:
                             firnam.remove(savenum)
                         continue
@@ -253,7 +253,7 @@ Clear: 6''')
                 continue
 
         elif sect in ('2', '3', '4'):
-            baacks = [n[4:n.rfind('_')] if '_' in n else n[4:] for n in os.listdir(output) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
+            baacks = [n[4:n.find('_')] if '_' in n else n[4:] for n in os.listdir(output) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
             if not baacks:
                 print("Path to output for backups has no save slots.")
                 continue
@@ -311,7 +311,7 @@ Clear: 6''')
                     if sect == '4':
                         print(f'Previous: "{backnam}"')
                     else:
-                        if input('"'+backnam+'"? (Y/n): ').startswith('n'):
+                        if input('"'+backnam+'"? (Y/n): ').lower().startswith('n'):
                             if backnum in firbc:
                                 firbc.remove(backnum)
                             continue
@@ -368,7 +368,7 @@ Clear: 6''')
                         bck = any(b.lower() == baselow for b in os.listdir(output))
                         backres = baseres + ('_' + str(max(backups)+1) if backups else ('_1' if bck and baselow != backnam.lower() else ''))
                         cmds = ['y', 'n']
-                        if input('"'+backres+'"? (Y/n): ').startswith('n'):
+                        if input('"'+backres+'"? (Y/n): ').lower().startswith('n'):
                             continue
                         break
                     if work(lambda: os.rename(backtar, pjoin(output, backres))):
@@ -380,10 +380,10 @@ Clear: 6''')
                 continue
 
         elif sect == '5':
-            baacks = [n+f' ({", ".join(sorted(os.listdir(pjoin(output, n)), key=lambda k: k.count(".")))})' for n in os.listdir(output) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
-            saaves = [n+f' ({", ".join(sorted(os.listdir(pjoin(savespath, n)), key=lambda k: k.count(".")))})' for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.rfind('_')] if '_' in n else n[4:]).isdigit()]
+            baacks = [n+f' ({", ".join(sorted(os.listdir(pjoin(output, n)), key=lambda k: k.count(".")))})' for n in os.listdir(output) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
+            saaves = [n+f' ({", ".join(sorted(os.listdir(pjoin(savespath, n)), key=lambda k: k.count(".")))})' for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
             cmds = ['b', 's']
-            print('\n'.join(baacks if not input('Backups or saves? (B/s): ').startswith('s') else saaves))
+            print('\n'.join(baacks if not input('Backups or saves? (B/s): ').lower().startswith('s') else saaves))
 
         elif sect == '6':
             try:
@@ -400,6 +400,10 @@ Clear: 6''')
                             continue
                     break
                 savetar = pjoin(savespath, 'save'+savenum)
+
+                cmds = ['y', 'n']
+                if not input(f'Clear "save{savenum}"? (y/N): ').lower().startswith('y'):
+                    continue
 
                 if work(lambda: shutil.rmtree(savetar), lambda: os.makedirs(savetar, exist_ok=True)):
                     print(f'Successfully cleared save at "{savetar}"')
