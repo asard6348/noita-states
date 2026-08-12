@@ -340,7 +340,7 @@ Clear: 6''')
                         break
                     savetar = pjoin(savespath, 'save'+slotnum)
                     if work(lambda: shutil.copytree(backtar, savetar, dirs_exist_ok=True)):
-                        print(f'Successfully loaded backup from "{backtar}"')
+                        print(f'Successfully loaded backup from "{backtar}" to "save{slotnum}"')
                     else:
                         continue
                     
