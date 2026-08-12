@@ -405,10 +405,14 @@ Clear: 6''')
                 continue
 
         elif sect == '5':
-            baacks = [n+f' ({", ".join(sorted(os.listdir(pjoin(output, n)), key=lambda k: k.count(".")))})' for n in os.listdir(output) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
-            saaves = [n+f' ({", ".join(sorted(os.listdir(pjoin(savespath, n)), key=lambda k: k.count(".")))})' for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
-            cmds = ['b', 's']
-            print('\n'.join(baacks if not input('Backups or saves? (B/s): ').lower().startswith('s') else saaves))
+            try:
+                baacks = [n+f' ({", ".join(sorted(os.listdir(pjoin(output, n)), key=lambda k: k.count(".")))})' for n in os.listdir(output) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
+                saaves = [n+f' ({", ".join(sorted(os.listdir(pjoin(savespath, n)), key=lambda k: k.count(".")))})' for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
+                cmds = ['b', 's']
+                print('\n'.join(baacks if not input('Backups or saves? (B/s): ').lower().startswith('s') else saaves))
+            except KeyboardInterrupt:
+                print('←')
+                continue
 
         elif sect == '6':
             try:
