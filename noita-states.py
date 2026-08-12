@@ -1,9 +1,22 @@
-import os, sys, shutil, filecmp, json, builtins, glob
+import os, sys, shutil, hashlib, json, builtins, glob
 
 
 def smart_copy(src, dst):
-    if os.path.exists(dst) and filecmp.cmp(src, dst, shallow=False):
-        return
+    try:
+        def hashdata(file_path, algorithm='sha1'):
+            hash_func = hashlib.new(algorithm)
+            with open(file_path, 'rb') as file:
+                while chunk := file.read(8192):
+                    hash_func.update(chunk)
+            return hash_func.hexdigest()
+        sstat = hashdata(src)
+        dstat = hashdata(dst)
+        if sstat == dstat:
+            return
+        print(sstat)
+        print(dstat)
+    except OSError:
+        pass
     shutil.copy2(src, dst)
 
 
