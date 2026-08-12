@@ -446,5 +446,7 @@ Clear: 6''')
 if __name__ == "__main__":
     try:
         main()
+    except KeyboardInterrupt:
+        print('(Interrupt)')
     except Exception as e:
         raise
