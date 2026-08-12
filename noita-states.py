@@ -268,26 +268,33 @@ Remove: 3''')
                     break
                 
                 while True:
-                    if not backnum in firbc or sect != '2':
+                    backss = [b for b in os.listdir(output) if b.split('_')[0].replace('save','')==backnum]
+                    if (not backnum in firbc or sect != '2') and len(backss) > 1:
                         while True:
                             bcs = [b.replace('save'+backnum+('_' if b.startswith('save'+backnum+'_') else ''), '') for b in os.listdir(output) if b.startswith('save'+backnum)]
                             bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
                             cmds = list(dict.fromkeys([b for b in bcs if b]))
                             bc[backnum] = input('Backup name (optional): ')
-                            bpre = 'save'+backnum+('_'+bc[backnum] if bc[backnum] else '')
+                            bpre = 'save'+backnum+('_'+bc[backnum] if backnum in bc else '')
                             mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
-                            if not mtchs and not bc[backnum] and cmds:
+                            if not mtchs and not backnum in bc and cmds:
                                 bc[backnum] = cmds[0]
                                 bpre = 'save'+backnum+'_'+bc[backnum]
                                 mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
                             if not mtchs:
-                                print('No match for "'+(bc[backnum] if bc[backnum] else 'save'+backnum)+'"')
+                                print('No match for "'+(bc[backnum] if backnum in bc else 'save'+backnum)+'"')
                                 continue
                             break
                         cmds = sorted([(b.replace(bpre, '').lstrip('_') or '0') for b in mtchs], key=lambda x: int(x) if x.isdigit() else -1)
                         bcv[backnum] = input('Version number (empty for last): ')
-                    backnam = 'save'+backnum+('_'+bc[backnum] if bc[backnum] else '')
-                    if bcv[backnum]:
+                    if len(backss) == 1:
+                        backn = backss[0].split('_')
+                        if len(backn) > 1:
+                            bc[backnum] = backn[1]
+                        if len(backn) > 2:
+                            bcv[backnum] = backn[2]
+                    backnam = 'save'+backnum+('_'+bc[backnum] if backnum in bc else '')
+                    if backnum in bcv:
                         backnam += ('' if bcv[backnum] == '0' else '_'+bcv[backnum])
                     else:
                         backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if b.startswith(backnam+'_') and b[len(backnam)+1:].isdigit()]
