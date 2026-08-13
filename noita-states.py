@@ -276,7 +276,7 @@ Clear: 6''')
                 continue
             try:
                 while True:
-                    bcks = [(b.split('_')[0] if '_' in b else b).replace('save','') for b in os.listdir(output)]
+                    bcks = [(b.split('_')[0] if '_' in b else b)[4:] for b in os.listdir(output) if b.startswith('save') and (b[4:b.find('_')] if '_' in b else b[4:]).isdigit()]
                     backs = []
                     for b in bcks:
                         if b not in backs: backs.append(b)
@@ -293,7 +293,7 @@ Clear: 6''')
                     break
                 
                 while True:
-                    backss = [b for b in os.listdir(output) if b.split('_')[0].replace('save','')==backnum]
+                    backss = [b for b in os.listdir(output) if b.startswith('save') and b.split('_')[0][4:] == backnum]
                     askd = False
                     if (not backnum in firbc or sect != '2') and len(backss) > 1:
                         askd = True
