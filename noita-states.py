@@ -241,7 +241,9 @@ Clear: 6''')
 
                 while True:
                     base_nam = 'save' + savenum
-                    if not savenum in firnam:
+                    base_full = 'save' + savenum + ('_' + nam[savenum] if nam.get(savenum) else '')
+                    mtchs = [b for b in os.listdir(output) if b == base_full or (b.startswith(base_full + '_') and b[len(base_full)+1:].isdigit())]
+                    if not savenum in firnam or not mtchs:
                         bcs = [b.replace('save'+savenum+('_' if b.lower().startswith(('save'+savenum+'_').lower()) else ''), '') for b in os.listdir(output) if b.lower().startswith(('save'+savenum).lower())]
                         bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
                         cmds = list(dict.fromkeys([b for b in bcs if b]))
@@ -295,7 +297,9 @@ Clear: 6''')
                 while True:
                     backss = [b for b in os.listdir(output) if b.startswith('save') and b.split('_')[0][4:] == backnum]
                     askd = False
-                    if (not backnum in firbc or sect != '2') and len(backss) > 1:
+                    bpre_check = 'save' + backnum + ('_' + bc[backnum] if bc.get(backnum) else '')
+                    mtchs = [b for b in os.listdir(output) if b == bpre_check or (b.startswith(bpre_check + '_') and b[len(bpre_check)+1:].isdigit())]
+                    if (not backnum in firbc or sect != '2' or not mtchs) and len(backss) > 1:
                         askd = True
                         while True:
                             bcs = [b.replace('save'+backnum+('_' if b.startswith('save'+backnum+'_') else ''), '') for b in os.listdir(output) if b.startswith('save'+backnum)]
