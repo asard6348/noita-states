@@ -34,9 +34,9 @@ def fetch_config(configs):
     return data, newcon
 
 
-def edit_config(configs, savespath, output, noitaexe='ask'):
+def edit_config(configs, savespath, output, noitaexe='ask', defaultaction='1'):
     with open(configs, 'w', encoding='utf-8') as c:
-        json.dump({'savespath': savespath, 'output': output, 'noitaexe': noitaexe}, c, indent=4)
+        json.dump({'savespath': savespath, 'output': output, 'noitaexe': noitaexe, 'defaultaction': defaultaction}, c, indent=4)
 
 
 def start_noita(noitaexe):
@@ -150,6 +150,8 @@ def main():
     noitaexe = cdata.get('noitaexe', None)
     noitaexe_saved = (not newcon) and bool(noitaexe) and noitaexe.lower() != 'ask'
 
+    defaultaction = cdata.get('defaultaction', '1')
+
     saves = []
     while True:
         autopath = True
@@ -193,14 +195,26 @@ def main():
     autopath = False
     cmds = ['y', 'n']
     if newcon and not input('Save to config file? (Y/n): ').lower().startswith('n'):
-        edit_config(configs, savespath, output)
+        edit_config(configs, savespath, output, defaultaction=defaultaction)
         print()
 
-    menu_lines = ['Quit: 0', 'Backup: 1 (or empty)', 'Load: 2', 'Remove: 3', 'Rename: 4', 'List: 5', 'Clear: 6', 'Prune: 7', 'Purge: 8']
-    if noitaexe_saved:
-        menu_lines.insert(0, f'Run Noita: play ({noitaexe})')
-    else:
-        menu_lines.insert(0, 'Run Noita: play')
+    menu_map = {
+        '0': 'Quit: 0',
+        '1': 'Backup: 1',
+        '2': 'Load: 2',
+        '3': 'Remove: 3',
+        '4': 'Rename: 4',
+        '5': 'List: 5',
+        '6': 'Clear: 6',
+        '7': 'Prune: 7',
+        '8': 'Purge: 8',
+        'play': f'Run Noita: play ({noitaexe})' if noitaexe_saved else 'Run Noita: play',
+    }
+    for action, label in menu_map.items():
+        if action == defaultaction:
+            menu_map[action] = label + ' (or empty)'
+    menu_lines = [menu_map[k] for k in ('0', '1', '2', '3', '4', '5', '6', '7', '8')]
+    menu_lines.insert(0, menu_map['play'])
     print('\n'.join(menu_lines))
 
     nam = {}
@@ -212,6 +226,10 @@ def main():
         autopath = False
         cmds = [str(r) for r in range(0, 9)] + ['play']
         sect = input('> ')
+        if not sect:
+            out.write('\033[A\033[2C' + defaultaction + '\r\033[B')
+            out.flush()
+            sect = defaultaction
 
         if os.path.exists(savespath):
             saves = [n[4:n.find('_')] if '_' in n else n[4:] for n in os.listdir(savespath) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
@@ -244,7 +262,7 @@ def main():
                     autopath = False
                     cmds = ['y', 'n']
                     if not input('Save to config file? (Y/n): ').lower().startswith('n'):
-                        edit_config(configs, savespath, output, noitaexe)
+                        edit_config(configs, savespath, output, noitaexe, defaultaction)
                         noitaexe_saved = True
 
                 if work(lambda: start_noita(noitaexe)):
@@ -255,10 +273,7 @@ def main():
                 print('←')
                 continue
 
-        elif sect == '1' or not sect:
-            if not sect:
-                out.write('\033[A\033[2C1\r\033[B')
-                out.flush()
+        elif sect == '1':
             try:
                 while True:
                     cmds = saves
