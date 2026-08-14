@@ -264,6 +264,11 @@ Prune: 7''')
                     
                 outputtar = pjoin(output, savenam)
 
+                if os.path.exists(outputtar):
+                    cmds = ['y', 'n']
+                    if not input(f'Backup folder "{savenam}" already exists. Overwrite? (y/N): ').lower().startswith('y'):
+                        continue
+
                 if work(lambda: shutil.copytree(savetar, outputtar, copy_function=smart_copy, dirs_exist_ok=True)):
                     print(f'Successfully made backup at "{outputtar}"')
                 else:
@@ -302,31 +307,49 @@ Prune: 7''')
                     mtchs = [b for b in os.listdir(output) if b == bpre_check or (b.startswith(bpre_check + '_') and b[len(bpre_check)+1:].isdigit())]
                     if (not backnum in firbc or sect != '2' or not mtchs) and len(backss) > 1:
                         askd = True
-                        while True:
-                            bcs = [b.replace('save'+backnum+('_' if b.startswith('save'+backnum+'_') else ''), '') for b in os.listdir(output) if b.startswith('save'+backnum)]
-                            bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
-                            cmds = list(dict.fromkeys([b for b in bcs if b]))
-                            bc[backnum] = input(f'Backup name (empty for first "save{backnum}" match): ')
+                        bcs = [b.replace('save'+backnum+('_' if b.startswith('save'+backnum+'_') else ''), '') for b in os.listdir(output) if b.startswith('save'+backnum)]
+                        bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
+                        unique_names = list(dict.fromkeys(bcs))
+                        if len(unique_names) == 1:
+                            bc[backnum] = unique_names[0]
                             bpre = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
                             mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
-                            if not mtchs and not bc.get(backnum) and cmds:
-                                bc[backnum] = cmds[0]
-                                bpre = 'save'+backnum+'_'+bc[backnum]
+                        else:
+                            while True:
+                                bcs = [b.replace('save'+backnum+('_' if b.startswith('save'+backnum+'_') else ''), '') for b in os.listdir(output) if b.startswith('save'+backnum)]
+                                bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
+                                cmds = list(dict.fromkeys([b for b in bcs if b]))
+                                bc[backnum] = input(f'Backup name (empty for first "save{backnum}" match): ')
+                                bpre = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
                                 mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
-                                out.write(f'\033[A\033[{44+len(backnum)}C{cmds[0]}\r\033[B')
-                                out.flush()
-                            if not mtchs:
-                                print('No match for "'+(bc.get(backnum) or 'save'+backnum)+'"')
-                                continue
-                            break
+                                if not mtchs and not bc.get(backnum) and cmds:
+                                    bc[backnum] = cmds[0]
+                                    bpre = 'save'+backnum+'_'+bc[backnum]
+                                    mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
+                                    out.write(f'\033[A\033[{44+len(backnum)}C{cmds[0]}\r\033[B')
+                                    out.flush()
+                                if not mtchs:
+                                    print('No match for "'+(bc.get(backnum) or 'save'+backnum)+'"')
+                                    continue
+                                break
                         cmds = sorted([(b.replace(bpre, '').lstrip('_') or '0') for b in mtchs], key=lambda x: int(x) if x.isdigit() else -1)
-                        bcv[backnum] = input('Version number (empty for last): ')
+                        if len(mtchs) > 1:
+                            bcv[backnum] = input('Version number (empty for last): ')
+                        else:
+                            bcv[backnum] = mtchs[0].replace(bpre, '').lstrip('_')
                     if len(backss) == 1:
-                        backn = backss[0].split('_')
-                        if len(backn) > 1:
-                            bc[backnum] = backn[1]
-                        if len(backn) > 2:
-                            bcv[backnum] = backn[2]
+                        rem = backss[0][len('save' + backnum):].lstrip('_')
+                        if rem:
+                            parts = rem.split('_')
+                            if parts[-1].isdigit():
+                                bcv[backnum] = parts[-1]
+                                bc[backnum] = '_'.join(parts[:-1])
+                            else:
+                                bcv[backnum] = ''
+                                bc[backnum] = rem
+                        else:
+                            bc[backnum] = ''
+                            bcv[backnum] = ''
                     backnam = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
                     if bcv.get(backnum):
                         backnam += ('' if bcv[backnum] == '0' else '_'+bcv[backnum])
@@ -396,7 +419,21 @@ Prune: 7''')
                         baselow = baseres.lower()
                         backups = [int(b[len(baseres)+1:]) for b in os.listdir(output) if b.lower().startswith(baselow+'_') and b[len(baseres)+1:].isdigit() and b != backnam]
                         bck = any(b.lower() == baselow for b in os.listdir(output))
-                        backres = baseres + ('_' + str(max(backups)+1) if backups else ('_1' if bck and baselow != backnam.lower() else ''))
+                        mtchs_res = [b for b in os.listdir(output) if (b.lower() == baselow or (b.lower().startswith(baselow + '_') and b[len(baseres)+1:].isdigit())) and b.lower() != backnam.lower()]
+                        cmds = sorted([(b.replace(baseres, '').lstrip('_') or '0') for b in mtchs_res], key=lambda x: int(x) if x.isdigit() else -1)
+                        verres = input('Version number (empty for auto): ')
+                        if verres:
+                            backres = baseres + ('' if verres == '0' else '_' + verres)
+                        else:
+                            if not namres and slotres == backnum and bcv.get(backnum):
+                                backres = baseres + ('' if bcv[backnum] == '0' else '_' + bcv[backnum])
+                            else:
+                                backres = baseres + ('_' + str(max(backups)+1) if backups else ('_1' if bck and baselow != backnam.lower() else ''))
+                        
+                        if os.path.exists(pjoin(output, backres)) and backres.lower() != backnam.lower():
+                            print(f'Backup "{backres}" already exists.')
+                            continue
+
                         cmds = ['y', 'n']
                         if input('"'+backres+'"? (Y/n): ').lower().startswith('n'):
                             continue
