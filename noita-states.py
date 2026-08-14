@@ -1,4 +1,4 @@
-import os, sys, shutil, hashlib, json, builtins, glob
+import os, sys, shutil, hashlib, json, builtins, glob, subprocess
 
 
 def smart_copy(src, dst):
@@ -34,9 +34,16 @@ def fetch_config(configs):
     return data, newcon
 
 
-def edit_config(configs, savespath, output):
+def edit_config(configs, savespath, output, noitaexe='ask'):
     with open(configs, 'w', encoding='utf-8') as c:
-        json.dump({'savespath': savespath, 'output': output}, c, indent=4)
+        json.dump({'savespath': savespath, 'output': output, 'noitaexe': noitaexe}, c, indent=4)
+
+
+def start_noita(noitaexe):
+    if sys.platform.startswith('win'):
+        subprocess.Popen([noitaexe], cwd=os.path.dirname(noitaexe) or None)
+    else:
+        subprocess.Popen(noitaexe, shell=True)
 
 
 def work(*func):
@@ -140,6 +147,9 @@ def main():
     configs = pjoin(cwd, 'noita-states-config.json')
     cdata, newcon = fetch_config(configs)
 
+    noitaexe = cdata.get('noitaexe', None)
+    noitaexe_saved = (not newcon) and bool(noitaexe) and noitaexe.lower() != 'ask'
+
     saves = []
     while True:
         autopath = True
@@ -186,15 +196,12 @@ def main():
         edit_config(configs, savespath, output)
         print()
 
-    print('''Quit: 0
-Backup: 1 (or empty)
-Load: 2
-Remove: 3
-Rename: 4
-List: 5
-Clear: 6
-Prune: 7
-Purge: 8''')
+    menu_lines = ['Quit: 0', 'Backup: 1 (or empty)', 'Load: 2', 'Remove: 3', 'Rename: 4', 'List: 5', 'Clear: 6', 'Prune: 7', 'Purge: 8']
+    if noitaexe_saved:
+        menu_lines.insert(0, f'Run Noita: play ({noitaexe})')
+    else:
+        menu_lines.insert(0, 'Run Noita: play')
+    print('\n'.join(menu_lines))
 
     nam = {}
     firnam = []
@@ -203,7 +210,7 @@ Purge: 8''')
     firbc = []
     while True:
         autopath = False
-        cmds = [str(r) for r in range(0, 9)]
+        cmds = [str(r) for r in range(0, 9)] + ['play']
         sect = input('> ')
 
         if os.path.exists(savespath):
@@ -221,7 +228,33 @@ Purge: 8''')
 
         if sect == '0':
             exit()
-        
+
+        elif sect == 'play':
+            try:
+                if not noitaexe or noitaexe.lower() == 'ask':
+                    autopath = True
+                    cmds = []
+                    if sys.platform.startswith('win'):
+                        noitaexe = input('Path to noita.exe: ').replace('"', '').replace('\\', '/')
+                    else:
+                        noitaexe = input('Command to run noita.exe: ')
+                    noitaexe_saved = False
+
+                if not noitaexe_saved:
+                    autopath = False
+                    cmds = ['y', 'n']
+                    if not input('Save to config file? (Y/n): ').lower().startswith('n'):
+                        edit_config(configs, savespath, output, noitaexe)
+                        noitaexe_saved = True
+
+                if work(lambda: start_noita(noitaexe)):
+                    print('Running')
+                else:
+                    continue
+            except KeyboardInterrupt:
+                print('←')
+                continue
+
         elif sect == '1' or not sect:
             if not sect:
                 out.write('\033[A\033[2C1\r\033[B')
