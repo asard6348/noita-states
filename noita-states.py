@@ -192,7 +192,8 @@ Load: 2
 Remove: 3
 Rename: 4
 List: 5
-Clear: 6''')
+Clear: 6
+Prune: 7''')
 
     nam = {}
     firnam = []
@@ -201,7 +202,7 @@ Clear: 6''')
     firbc = []
     while True:
         autopath = False
-        cmds = [str(r) for r in range(0,7)]
+        cmds = [str(r) for r in range(0, 8)]
         sect = input('> ')
 
         if os.path.exists(savespath):
@@ -440,6 +441,111 @@ Clear: 6''')
 
                 if work(lambda: shutil.rmtree(savetar), lambda: os.makedirs(savetar, exist_ok=True)):
                     print(f'Successfully cleared save at "{savetar}"')
+                else:
+                    continue
+            except KeyboardInterrupt:
+                print('←')
+                continue
+
+        elif sect == '7':
+            baacks = [n[4:n.find('_')] if '_' in n else n[4:] for n in os.listdir(output) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
+            if not baacks:
+                print("Path to output for backups has no save slots.")
+                continue
+            try:
+                while True:
+                    bcks = [(b.split('_')[0] if '_' in b else b)[4:] for b in os.listdir(output) if b.startswith('save') and (b[4:b.find('_')] if '_' in b else b[4:]).isdigit()]
+                    backs = []
+                    for b in bcks:
+                        if b not in backs: backs.append(b)
+                    cmds = backs
+                    backnum = input('[Prune] ('+', '.join([f'*{s}*' if s == backs[0] else s for s in backs])+'): ')
+                    if not backnum: backnum = backs[0]
+                    if backnum not in backs:
+                        cand = [nu for nu in backs if nu==backnum or nu.endswith(backnum)]
+                        if cand:
+                            backnum = cand[0]
+                        else:
+                            print('No save slot with the given number exists.')
+                            continue
+                    break
+
+                bcs = [b.replace('save'+backnum+('_' if b.lower().startswith(('save'+backnum+'_').lower()) else ''), '') for b in os.listdir(output) if b.lower().startswith(('save'+backnum).lower())]
+                bcs = [(b[:b.rfind('_')] if '_' in b and b[b.rfind('_')+1:].isdigit() else (b if not b.isdigit() else '')) for b in bcs]
+                unique_names = list(dict.fromkeys(bcs))
+                cmds = list(dict.fromkeys([b for b in bcs if b]))
+
+                asked_bc_name = False
+                if len(unique_names) == 1:
+                    bc_name = unique_names[0]
+                else:
+                    asked_bc_name = True
+                    bc_name = input('Backup name (empty for all): ')
+
+                to_prune = []
+
+                if asked_bc_name and not bc_name:
+                    backss = [b for b in os.listdir(output) if b.startswith('save') and b.split('_')[0][4:] == backnum]
+
+                    groups = {}
+                    for b in backss:
+                        parts = b.split('_')
+                        if len(parts) > 1 and parts[-1].isdigit():
+                            base = '_'.join(parts[:-1])
+                        else:
+                            base = b
+                        groups.setdefault(base, []).append(b)
+
+                    for base, items in groups.items():
+                        if len(items) > 1:
+                            sorted_items = sorted(
+                                items,
+                                key=lambda x: (
+                                    int(x.rpartition('_')[2]) if x.rpartition('_')[2].isdigit() else 0,
+                                    os.path.getmtime(pjoin(output, x))
+                                )
+                            )
+                            to_prune.extend(sorted_items[:-1])
+                else:
+                    bpre = 'save' + backnum + ('_' + bc_name if bc_name else '')
+                    mtchs = [b for b in os.listdir(output) if b == bpre or (b.startswith(bpre + '_') and b[len(bpre)+1:].isdigit())]
+                    if not mtchs:
+                        print('No match for "' + bc_name + '"')
+                        continue
+
+                    if len(mtchs) > 1:
+                        cmds = sorted([(b.replace(bpre, '').lstrip('_') or '0') for b in mtchs], key=lambda x: int(x) if x.isdigit() else -1)
+                        ver_num = input('Version number to prune older than (empty for last): ')
+
+                        if not ver_num:
+                            digit_vers = [int(v) for v in cmds if v.isdigit()]
+                            target_ver = max(digit_vers) if digit_vers else 0
+                            out.write(f'\033[A\033[53C{target_ver}\r\033[B')
+                            out.flush()
+                        else:
+                            target_ver = int(ver_num) if ver_num.isdigit() else 0
+
+                        for b in mtchs:
+                            v_str = b.replace(bpre, '').lstrip('_') or '0'
+                            v_int = int(v_str) if v_str.isdigit() else 0
+                            if v_int < target_ver:
+                                to_prune.append(b)
+
+                if not to_prune:
+                    print(f'No old backup versions to prune for "save{backnum}".')
+                    continue
+
+                print(f'Backups to delete: {", ".join(to_prune)}')
+                cmds = ['y', 'n']
+                if not input(f'Prune {len(to_prune)} old backup(s) for "save{backnum}"? (y/N): ').lower().startswith('y'):
+                    continue
+
+                def do_prune():
+                    for folder in to_prune:
+                        shutil.rmtree(pjoin(output, folder))
+
+                if work(do_prune):
+                    print(f'Successfully pruned {len(to_prune)} old backup(s) for "save{backnum}"')
                 else:
                     continue
             except KeyboardInterrupt:
