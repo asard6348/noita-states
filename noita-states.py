@@ -193,7 +193,8 @@ Remove: 3
 Rename: 4
 List: 5
 Clear: 6
-Prune: 7''')
+Prune: 7
+Purge: 8''')
 
     nam = {}
     firnam = []
@@ -202,7 +203,7 @@ Prune: 7''')
     firbc = []
     while True:
         autopath = False
-        cmds = [str(r) for r in range(0, 8)]
+        cmds = [str(r) for r in range(0, 9)]
         sect = input('> ')
 
         if os.path.exists(savespath):
@@ -277,7 +278,7 @@ Prune: 7''')
                 print('←')
                 continue
 
-        elif sect in ('2', '3', '4'):
+        elif sect in ('2', '3', '4', '8'):
             baacks = [n[4:n.find('_')] if '_' in n else n[4:] for n in os.listdir(output) if n.startswith('save') and (n[4:n.find('_')] if '_' in n else n[4:]).isdigit()]
             if not baacks:
                 print("Path to output for backups has no save slots.")
@@ -289,7 +290,7 @@ Prune: 7''')
                     for b in bcks:
                         if b not in backs: backs.append(b)
                     cmds = backs
-                    backnum = input(('[Load]' if sect=='2' else '[Remove]' if sect=='3' else '[Rename]')+' ('+', '.join([f'*{s}*' if s == backs[0] else s for s in backs])+'): ')
+                    backnum = input(('[Load]' if sect=='2' else '[Remove]' if sect=='3' else '[Rename]' if sect=='4' else '[Purge]')+' ('+', '.join([f'*{s}*' if s == backs[0] else s for s in backs])+'): ')
                     if not backnum: backnum = backs[0]
                     if backnum not in backs:
                         cand = [nu for nu in backs if nu==backnum or nu.endswith(backnum)]
@@ -333,10 +334,11 @@ Prune: 7''')
                                     continue
                                 break
                         cmds = sorted([(b.replace(bpre, '').lstrip('_') or '0') for b in mtchs], key=lambda x: int(x) if x.isdigit() else -1)
-                        if len(mtchs) > 1:
-                            bcv[backnum] = input('Version number (empty for last): ')
-                        else:
-                            bcv[backnum] = mtchs[0].replace(bpre, '').lstrip('_')
+                        if sect != '8':
+                            if len(mtchs) > 1:
+                                bcv[backnum] = input('Version number (empty for last): ')
+                            else:
+                                bcv[backnum] = mtchs[0].replace(bpre, '').lstrip('_')
                     if len(backss) == 1:
                         rem = backss[0][len('save' + backnum):].lstrip('_')
                         if rem:
@@ -350,28 +352,33 @@ Prune: 7''')
                         else:
                             bc[backnum] = ''
                             bcv[backnum] = ''
-                    backnam = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
-                    if bcv.get(backnum):
-                        backnam += ('' if bcv[backnum] == '0' else '_'+bcv[backnum])
-                    else:
-                        backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if b.startswith(backnam+'_') and b[len(backnam)+1:].isdigit()]
-                        ver = ('_'+str(max(backups)) if backups else '')
-                        backnam += ver
-                        if askd:
-                            out.write(f'\033[A\033[33C{ver.replace("_","")}\r\033[B')
-                            out.flush()
+                    
+                    bpre = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
+                    mtchs = [b for b in os.listdir(output) if b==bpre or (b.startswith(bpre+'_') and b[len(bpre)+1:].isdigit())]
+
+                    if sect != '8':
+                        backnam = 'save'+backnum+('_'+bc[backnum] if bc.get(backnum) else '')
+                        if bcv.get(backnum):
+                            backnam += ('' if bcv[backnum] == '0' else '_'+bcv[backnum])
+                        else:
+                            backups = [int(b[len(backnam)+1:]) for b in os.listdir(output) if b.startswith(backnam+'_') and b[len(backnam)+1:].isdigit()]
+                            ver = ('_'+str(max(backups)) if backups else '')
+                            backnam += ver
+                            if askd:
+                                out.write(f'\033[A\033[33C{ver.replace("_","")}\r\033[B')
+                                out.flush()
+                        backtar = pjoin(output, backnam)
+
                     cmds = ['y', 'n']
                     if sect == '4':
                         print(f'Previous: "{backnam}"')
-                    else:
+                    elif sect != '8':
                         if input('"'+backnam+'"? (Y/n): ').lower().startswith('n'):
                             if backnum in firbc:
                                 firbc.remove(backnum)
                             continue
                     if not backnum in firbc and sect == '2': firbc.append(backnum)
                     break
-
-                backtar = pjoin(output, backnam)
 
                 if sect == '2':
                     while True:
@@ -442,6 +449,18 @@ Prune: 7''')
                         print(f'Successfully renamed backup previously at "{backtar}"')
                     else:
                         continue
+
+                elif sect == '8':
+                    cmds = ['y', 'n']
+                    if input(f'"{bpre}" ({len(mtchs)} backup{"s" if len(mtchs)>1 else ""})? (y/N): ').lower().startswith('y'):
+                        success = True
+                        for m in mtchs:
+                            if not work(lambda m=m: shutil.rmtree(pjoin(output, m))):
+                                success = False
+                        if success:
+                            print(f'Successfully purged backup(s) for "{bpre}"')
+                        else:
+                            continue
             except KeyboardInterrupt:
                 print('←')
                 continue
