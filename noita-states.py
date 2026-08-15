@@ -199,6 +199,7 @@ def main():
         print()
 
     menu_map = {
+        'play': 'Run Noita: play',
         '0': 'Quit: 0',
         '1': 'Backup: 1',
         '2': 'Load: 2',
@@ -208,13 +209,13 @@ def main():
         '6': 'Clear: 6',
         '7': 'Prune: 7',
         '8': 'Purge: 8',
-        'play': f'Run Noita: play ({noitaexe})' if noitaexe_saved else 'Run Noita: play',
     }
     for action, label in menu_map.items():
         if action == defaultaction:
             menu_map[action] = label + ' (or empty)'
-    menu_lines = [menu_map[k] for k in ('0', '1', '2', '3', '4', '5', '6', '7', '8')]
-    menu_lines.insert(0, menu_map['play'])
+    menu_map['play'] += f' ({noitaexe})' if noitaexe_saved else ''
+    menu_sorted = {key:val for key,val in sorted(menu_map.items(), key=lambda item: item[0].isdigit())}
+    menu_lines = menu_sorted.values()
     print('\n'.join(menu_lines))
 
     nam = {}
@@ -224,7 +225,7 @@ def main():
     firbc = []
     while True:
         autopath = False
-        cmds = [str(r) for r in range(0, 9)] + ['play']
+        cmds = menu_sorted.keys()
         sect = input('> ')
         if not sect:
             out.write('\033[A\033[2C' + defaultaction + '\r\033[B')
@@ -543,7 +544,17 @@ def main():
                 if not input(f'Clear "save{savenum}"? (y/N): ').lower().startswith('y'):
                     continue
 
-                if work(lambda: shutil.rmtree(savetar), lambda: os.makedirs(savetar, exist_ok=True)):
+                def clear_save():
+                    for item in os.listdir(savetar):
+                        if item == 'persistent':
+                            continue
+                        item_path = pjoin(savetar, item)
+                        if os.path.isdir(item_path):
+                            shutil.rmtree(item_path)
+                        else:
+                            os.remove(item_path)
+
+                if work(clear_save):
                     print(f'Successfully cleared save at "{savetar}"')
                 else:
                     continue
