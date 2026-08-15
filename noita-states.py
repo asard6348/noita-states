@@ -34,7 +34,7 @@ def fetch_config(configs):
     return data, newcon
 
 
-def edit_config(configs, savespath, output, noitaexe='ask', defaultaction='1'):
+def edit_config(configs, savespath, output, noitaexe='ask', defaultaction='play'):
     with open(configs, 'w', encoding='utf-8') as c:
         json.dump({'savespath': savespath, 'output': output, 'noitaexe': noitaexe, 'defaultaction': defaultaction}, c, indent=4)
 
@@ -150,7 +150,7 @@ def main():
     noitaexe = cdata.get('noitaexe', None)
     noitaexe_saved = (not newcon) and bool(noitaexe) and noitaexe.lower() != 'ask'
 
-    defaultaction = cdata.get('defaultaction', '1')
+    defaultaction = cdata.get('defaultaction', 'play')
 
     saves = []
     while True:
