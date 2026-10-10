@@ -35,6 +35,7 @@ def fetch_config(configs):
 
 
 def edit_config(configs, savespath, output, noitaexe='ask', defaultaction='play'):
+    os.makedirs(os.path.dirname(configs), exist_ok=True)
     with open(configs, 'w', encoding='utf-8') as c:
         json.dump({'savespath': savespath, 'output': output, 'noitaexe': noitaexe, 'defaultaction': defaultaction}, c, indent=4)
 
@@ -68,6 +69,7 @@ def main():
     output = 'ask'
     
     pjoin = os.path.join
+    joinp = os.path.join
     cwd = os.getcwd()
     out = sys.stdout
     cmds = []
@@ -147,7 +149,19 @@ def main():
 
             builtins.input = win_input
 
-    configs = pjoin(cwd, 'noita-states-config.json')
+    APP_DIRNAME = "NoitaStates"
+    def default_config_dir():
+        home = os.path.expanduser("~")
+        if sys.platform.startswith("win"):
+            base = os.environ.get("APPDATA") or joinp(home, "AppData", "Roaming")
+            return joinp(base, APP_DIRNAME)
+        if sys.platform == "darwin":
+            return joinp(home, "Library", "Application Support", APP_DIRNAME)
+        base = os.environ.get("XDG_CONFIG_HOME") or joinp(home, ".config")
+        return joinp(base, "noita-states")
+
+    cfgdir = default_config_dir()
+    configs = joinp(cfgdir, "noita-states-config.json")
     cdata, newcon = fetch_config(configs)
 
     noitaexe = cdata.get('noitaexe', None)
